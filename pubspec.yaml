@@ -40,7 +40,7 @@ dependencies:
   path_provider: ^2.1.4
   csv: ^5.0.1
   sqflite: ^2.4.0
-  geolocator: ^12.0.0
+  geolocator: ^13.0.2
 
 dev_dependencies:
   flutter_test:
