@@ -21,7 +21,7 @@ class DatabaseHelper {
 
   Future<Database> _initDatabase() async {
     // Set the path to the database
-    
+
     String path = join((await getDownloadsDirectory())!.path, 'my_database.db');
     print((await getDownloadsDirectory())!.path);
     return await openDatabase(

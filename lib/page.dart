@@ -9,8 +9,8 @@ DatabaseHelper databaseHelper = DatabaseHelper();
 
 class MyHomePage extends HookWidget {
   const MyHomePage({super.key, required this.title});
-  final String title;  
-  
+  final String title;
+
   @override
   Widget build(BuildContext context) {
     final gyroscopeEventsStream = useStream(gyroscopeEventStream());
@@ -30,36 +30,36 @@ class MyHomePage extends HookWidget {
       if (accelerometerData != null && userAccelerometerData != null) {
         final timestamp = DateTime.now().toIso8601String();
         final newDataMap = {
-            'timestamp' : timestamp,
-            'accelerometerData_X' : accelerometerData.x,
-            'accelerometerData_Y' : accelerometerData.y,
-            'accelerometerData_Z' : accelerometerData.z,
-            'userAccelerometerData_X' : userAccelerometerData.x,
-            'userAccelerometerData_Y' : userAccelerometerData.y,
-            'userAccelerometerData_Z' : userAccelerometerData.z,
-            //'locations_latitude' : gyroscopeEventData,
-          };
+          'timestamp': timestamp,
+          'accelerometerData_X': accelerometerData.x,
+          'accelerometerData_Y': accelerometerData.y,
+          'accelerometerData_Z': accelerometerData.z,
+          'userAccelerometerData_X': userAccelerometerData.x,
+          'userAccelerometerData_Y': userAccelerometerData.y,
+          'userAccelerometerData_Z': userAccelerometerData.z,
+          //'locations_latitude' : gyroscopeEventData,
+        };
         databaseHelper.insertUser(newDataMap);
-        data.value = [
-          ...data.value, newDataMap
-        ];
+        data.value = [...data.value, newDataMap];
         print('Timestamp : ${data.value.last['timestamp']}');
       }
       return null;
     }, [accelerometerEventsStream.data, userAccelerometerEventStream.data]);
 
-    useEffect((){
+    useEffect(() {
       Future.delayed(Duration.zero, () async {
         PositionHelper positionHelper = PositionHelper();
         try {
-          Map<String, double> position = await positionHelper.getCurrentPosition();
-          print('Latitude: ${position['latitude']}, Longitude: ${position['longitude']}');
-          } catch (e) {
-            print('Error: $e');
+          Map<String, double> position =
+              await positionHelper.getCurrentPosition();
+          print(
+              'Latitude: ${position['latitude']}, Longitude: ${position['longitude']}');
+        } catch (e) {
+          print('Error: $e');
         }
-        });
-     
-        return null;
+      });
+
+      return null;
     }, const []);
 
     return Scaffold(
@@ -67,7 +67,7 @@ class MyHomePage extends HookWidget {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(title),
       ),
-      body:  Center(
+      body: Center(
         child: data.value.isEmpty
             ? const Text('Waiting for accelerometer data...')
             : Column(
@@ -82,5 +82,4 @@ class MyHomePage extends HookWidget {
       ),
     );
   }
-
 }
