@@ -1,4 +1,5 @@
 import 'package:and_inv/database_helpler.dart';
+import 'package:and_inv/position.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:sensors_plus/sensors_plus.dart';
@@ -8,10 +9,7 @@ DatabaseHelper databaseHelper = DatabaseHelper();
 
 class MyHomePage extends HookWidget {
   const MyHomePage({super.key, required this.title});
-  final String title;
-
-
-  
+  final String title;  
   
   @override
   Widget build(BuildContext context) {
@@ -50,6 +48,19 @@ class MyHomePage extends HookWidget {
       return null;
     }, [accelerometerEventsStream.data, userAccelerometerEventStream.data]);
 
+    useEffect((){
+      Future.delayed(Duration.zero, () async {
+        PositionHelper positionHelper = PositionHelper();
+        try {
+          Map<String, double> position = await positionHelper.getCurrentPosition();
+          print('Latitude: ${position['latitude']}, Longitude: ${position['longitude']}');
+          } catch (e) {
+            print('Error: $e');
+        }
+        });
+     
+        return null;
+    }, const []);
 
     return Scaffold(
       appBar: AppBar(
