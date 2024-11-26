@@ -42,7 +42,9 @@ class DatabaseHelper {
         accelerometerData_Z REAL,
         useraccelerometerData_X REAL,
         useraccelerometerData_Y REAL,
-        useraccelerometerData_Z REAL
+        useraccelerometerData_Z REAL,
+        location_latitude REAL,
+        location_longitude REAL
       )
     ''');
   }

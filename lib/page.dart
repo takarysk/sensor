@@ -28,39 +28,48 @@ class MyHomePage extends HookWidget {
       final gyroscopeEventData = gyroscopeEventsStream.data;
 
       if (accelerometerData != null && userAccelerometerData != null) {
-        final timestamp = DateTime.now().toIso8601String();
-        final newDataMap = {
-          'timestamp': timestamp,
-          'accelerometerData_X': accelerometerData.x,
-          'accelerometerData_Y': accelerometerData.y,
-          'accelerometerData_Z': accelerometerData.z,
-          'userAccelerometerData_X': userAccelerometerData.x,
-          'userAccelerometerData_Y': userAccelerometerData.y,
-          'userAccelerometerData_Z': userAccelerometerData.z,
-          //'locations_latitude' : gyroscopeEventData,
-        };
-        databaseHelper.insertUser(newDataMap);
-        data.value = [...data.value, newDataMap];
-        print('Timestamp : ${data.value.last['timestamp']}');
+        Future(() async {
+          try {
+            // 現在位置を取得
+            PositionHelper positionHelper = PositionHelper();
+            Map<String, double> position =
+                await positionHelper.getCurrentPosition();
+
+            final latitude = position['latitude']!;
+            final longitude = position['longitude']!;
+            final timestamp = DateTime.now().toIso8601String();
+
+            // データマップを作成
+            final newDataMap = {
+              'timestamp': timestamp,
+              'accelerometerData_X': accelerometerData.x,
+              'accelerometerData_Y': accelerometerData.y,
+              'accelerometerData_Z': accelerometerData.z,
+              'userAccelerometerData_X': userAccelerometerData.x,
+              'userAccelerometerData_Y': userAccelerometerData.y,
+              'userAccelerometerData_Z': userAccelerometerData.z,
+              'location_latitude': latitude, // 緯度
+              'location_longitude': longitude, // 経度
+            };
+
+            // データベースに挿入
+            await databaseHelper.insertUser(newDataMap);
+
+            // 状態を更新
+            data.value = [...data.value, newDataMap];
+
+            // デバッグ用の出力
+            //print('Timestamp : ${data.value.last['timestamp']}');
+            print(
+                'Location : Lat=${position['latitude']}, Long=${position['longitude']}');
+          } catch (e) {
+            print('Error while fetching location: $e');
+          }
+        });
       }
+
       return null;
     }, [accelerometerEventsStream.data, userAccelerometerEventStream.data]);
-
-    useEffect(() {
-      Future.delayed(Duration.zero, () async {
-        PositionHelper positionHelper = PositionHelper();
-        try {
-          Map<String, double> position =
-              await positionHelper.getCurrentPosition();
-          print(
-              'Latitude: ${position['latitude']}, Longitude: ${position['longitude']}');
-        } catch (e) {
-          print('Error: $e');
-        }
-      });
-
-      return null;
-    }, const []);
 
     return Scaffold(
       appBar: AppBar(
@@ -77,6 +86,8 @@ class MyHomePage extends HookWidget {
                   Text('x : ${data.value.last['accelerometerData_X']}'),
                   Text('y: ${data.value.last['accelerometerData_Y']}'),
                   Text('z: ${data.value.last['accelerometerData_Z']}'),
+                  Text('latitude: ${data.value.last['latitude']}'),
+                  Text('longitude: ${data.value.last['longitude']}')
                 ],
               ),
       ),
