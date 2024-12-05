@@ -21,8 +21,11 @@ class MyHomePage extends HookWidget {
     final userAccelerometerEventStream = useStream(userAccelerometerEvents);
 
     final data = useState<List<Map<String, Object>>>([]);
+    final isRecording = useState(false);
 
     useEffect(() {
+      if (!isRecording.value) return null;
+
       final accelerometerData = accelerometerEventsStream.data;
       final userAccelerometerData = userAccelerometerEventStream.data;
       final gyroscopeEventData = gyroscopeEventsStream.data;
