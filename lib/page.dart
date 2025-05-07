@@ -20,11 +20,11 @@ class MyHomePage extends HookWidget {
 
     final userAccelerometerEventStream = useStream(userAccelerometerEvents);
 
-    final data = useState<List<Map<String, Object>>>([]);
+    final data = useState<Map<String, Object>>({});
     final isRecording = useState(false);
 
     useEffect(() {
-      if (!isRecording.value) return null;
+      // if (!isRecording.value) return null;
 
       final accelerometerData = accelerometerEventsStream.data;
       final userAccelerometerData = userAccelerometerEventStream.data;
@@ -59,7 +59,7 @@ class MyHomePage extends HookWidget {
             await databaseHelper.insertUser(newDataMap);
 
             // 状態を更新
-            data.value = [...data.value, newDataMap];
+            data.value = newDataMap;
 
             // デバッグ用の出力
             //print('Timestamp : ${data.value.last['timestamp']}');
@@ -85,12 +85,12 @@ class MyHomePage extends HookWidget {
             : Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('Timestamp : ${data.value.last['timestamp']}'),
-                  Text('x : ${data.value.last['accelerometerData_X']}'),
-                  Text('y: ${data.value.last['accelerometerData_Y']}'),
-                  Text('z: ${data.value.last['accelerometerData_Z']}'),
-                  Text('latitude: ${data.value.last['latitude']}'),
-                  Text('longitude: ${data.value.last['longitude']}')
+                  Text('Timestamp : ${data.value['timestamp']}'),
+                  Text('x : ${data.value['accelerometerData_X']}'),
+                  Text('y: ${data.value['accelerometerData_Y']}'),
+                  Text('z: ${data.value['accelerometerData_Z']}'),
+                  Text('latitude: ${data.value['latitude']}'),
+                  Text('longitude: ${data.value['longitude']}')
                 ],
               ),
       ),
