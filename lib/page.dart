@@ -3,8 +3,8 @@ import 'package:and_inv/position.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:sensors_plus/sensors_plus.dart';
-import 'package:rxdart/rxdart.dart';
 import 'dart:async';
+import 'package:intl/intl.dart';
 
 DatabaseHelper databaseHelper = DatabaseHelper();
 
@@ -14,89 +14,109 @@ class MyHomePage extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
-    final throttledAccelerometerEventsStream = useStream(
-      accelerometerEvents.transform(
-        ThrottleStreamTransformer(
-            (_) => Stream<void>.periodic(const Duration(milliseconds: 100))),
-      ),
-    );
-
-    final throttledUserAccelerometerEventsStream = useStream(
-      userAccelerometerEvents.transform(
-        ThrottleStreamTransformer(
-            (_) => Stream<void>.periodic(const Duration(milliseconds: 100))),
-      ),
-    );
-
     final accelerometerEventsStream = useStream(accelerometerEvents);
     final userAccelerometerEventStream = useStream(userAccelerometerEvents);
-
     final data = useState<Map<String, Object>>({});
     final stackData = useState<List<Map<String, Object>>>([]);
     final isRecording = useState(false);
+    final timestampFormat = DateFormat('yyyy-MM-dd HH:mm:ss.SSS');
+    final buffer = useState<List<Map<String, Object>>>([]);
 
     useEffect(() {
-      if (!isRecording.value) return null;
+      final timer = Timer.periodic(const Duration(milliseconds: 100), (_) {
+        Future(() async {
+          final event = userAccelerometerEventStream.data;
 
-      // 10秒間隔でデータを記録
-      final timer =
-          Timer.periodic(const Duration(milliseconds: 100), (timer) async {
-        final accelerometerData = accelerometerEventsStream.data;
-        final userAccelerometerData = userAccelerometerEventStream.data;
+          if (event != null) {
+            final timestamp = timestampFormat.format(DateTime.now());
 
-        if (accelerometerData != null && userAccelerometerData != null) {
-          Future(() async {
+            double latitude = 0.0;
+            double longitude = 0.0;
+
             try {
-              // 現在位置を取得
               PositionHelper positionHelper = PositionHelper();
               Map<String, double> position =
                   await positionHelper.getCurrentPosition();
-
-              final latitude = position['latitude']!;
-              final longitude = position['longitude']!;
-              final accelerometerDataTimestamp = accelerometerData.timestamp;
-              final userAccelerometerDataTimestamp =
-                  userAccelerometerData.timestamp;
-
-              // データマップを作成
-              final newDataMap = {
-                'accelerometerDataTimestamp': accelerometerDataTimestamp,
-                'userAccelerometerDataTimestamp':
-                    userAccelerometerDataTimestamp,
-                'accelerometerData_X': accelerometerData.x,
-                'accelerometerData_Y': accelerometerData.y,
-                'accelerometerData_Z': accelerometerData.z,
-                'userAccelerometerData_X': userAccelerometerData.x,
-                'userAccelerometerData_Y': userAccelerometerData.y,
-                'userAccelerometerData_Z': userAccelerometerData.z,
-                'location_latitude': latitude,
-                'location_longitude': longitude,
-              };
-
-              stackData.value = [...stackData.value, newDataMap];
-              if (stackData.value.length == 100) {
-                // データベースに挿入
-                await databaseHelper.insertListData(stackData.value);
-                stackData.value = [];
-              }
-
-              // 状態を更新
-              data.value = newDataMap;
-
-              // print(
-              //     'Data recorded: Lat=$latitude, Long=$longitude at $timestamp');
+              latitude = position['latitude']!;
+              longitude = position['longitude']!;
             } catch (e) {
               print('Error while fetching location: $e');
             }
-          });
-        }
+
+            final entry = {
+              'timestamp': timestamp,
+              'useraccelerometerData_X': event.x,
+              'useraccelerometerData_Y': event.y,
+              'useraccelerometerData_Z': event.z,
+              'location_latitude': latitude,
+              'location_longitude': longitude,
+            };
+
+            buffer.value = [...buffer.value, entry];
+
+            if (buffer.value.length >= 500) {
+              final batchToInsert =
+                  List<Map<String, Object>>.from(buffer.value);
+              buffer.value = [];
+              await databaseHelper.insertBatch(batchToInsert);
+            }
+          }
+        });
       });
 
-      // クリーンアップ処理：タイマーを停止
-      return () {
-        timer.cancel();
-      };
+      return timer.cancel;
     }, [isRecording.value]);
+
+    // Future(() async {
+    //   try {
+    //     // 現在位置を取得
+    //     PositionHelper positionHelper = PositionHelper();
+    //     Map<String, double> position =
+    //         await positionHelper.getCurrentPosition();
+
+    //     final latitude = position['latitude']!;
+    //     final longitude = position['longitude']!;
+    //     final accelerometerDataTimestamp = accelerometerData.timestamp;
+    //     final userAccelerometerDataTimestamp = event.timestamp;
+
+    //     // データマップを作成
+    //     final newDataMap = {
+    //       'accelerometerDataTimestamp':
+    //           timestampFormat.format(accelerometerDataTimestamp),
+    //       'userAccelerometerDataTimestamp':
+    //           timestampFormat.format(userAccelerometerDataTimestamp),
+    //       'accelerometerData_X': accelerometerData.x,
+    //       'accelerometerData_Y': accelerometerData.y,
+    //       'accelerometerData_Z': accelerometerData.z,
+    //       'userAccelerometerData_X': userAccelerometerData_X.x,
+    //       'userAccelerometerData_Y': userAccelerometerData_Y.y,
+    //       'userAccelerometerData_Z': userAccelerometerData_Z.z,
+    //       'location_latitude': latitude,
+    //       'location_longitude': longitude,
+    //     };
+
+    //     stackData.value = [...stackData.value, newDataMap];
+    //     if (stackData.value.length == 100) {
+    //       // データベースに挿入
+    //       await databaseHelper.insertListData(stackData.value);
+    //       stackData.value = [];
+    //     }
+
+    //     // 状態を更新
+    //     data.value = newDataMap;
+
+    //     // print(
+    //     //     'Data recorded: Lat=$latitude, Long=$longitude at $timestamp');
+    //   } catch (e) {
+    //     print('Error while fetching location: $e');
+    //   }
+    // });
+    //     }
+    //   });
+
+    //   // クリーンアップ処理：タイマーを停止
+    //   return timer.cancel;
+    // }, [isRecording.value]);
 
     return Scaffold(
       appBar: AppBar(

@@ -2,18 +2,18 @@ import sqlite3
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# データベースに接続
-conn = sqlite3.connect('example.db')
+# # データベースに接続
+conn = sqlite3.connect('2025-05-27-20-18-57.db')
 
-# SQLで1分単位に丸めてカウント（SQLiteの書き方）
+# # SQLで1分単位に丸めてカウント（SQLiteの書き方）
 query = """
 SELECT strftime('%Y-%m-%d %H:%M', timestamp) AS minute, COUNT(*) as count
-FROM sensor_data
+FROM users
 GROUP BY minute
 ORDER BY minute
 """
 
-# データを取得
+# # データを取得
 df = pd.read_sql_query(query, conn)
 conn.close()
 

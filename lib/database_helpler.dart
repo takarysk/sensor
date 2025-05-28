@@ -22,7 +22,7 @@ class DatabaseHelper {
 
   Future<Database> _initDatabase() async {
     // Set the path to the database
-    final dateFormat = DateFormat('yyyy-MM-dd-hh-mm-ss');
+    final dateFormat = DateFormat('yyyy-MM-dd-HH-mm-ss');
     String path = join((await getDownloadsDirectory())!.path,
         '${dateFormat.format(DateTime.now())}.db');
     print((await getDownloadsDirectory())!.path);
@@ -38,6 +38,7 @@ class DatabaseHelper {
     await db.execute('''
       CREATE TABLE users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        timestamp text,
         accelerometerDataTimestamp text,
         userAccelerometerDataTimestamp text,
         accelerometerData_X REAL,
@@ -55,7 +56,7 @@ class DatabaseHelper {
   // Insert a user
   Future<int> insertUser(Map<String, dynamic> user) async {
     Database db = await database;
-    return await db.insert('users', user);
+    return await db.insert('test', user);
   }
 
   Future<void> insertListData(List<Map<String, dynamic>> dataList) async {
@@ -65,7 +66,7 @@ class DatabaseHelper {
       Batch batch = txn.batch();
 
       for (var data in dataList) {
-        batch.insert('your_table_name', data);
+        batch.insert('test', data);
       }
 
       await batch.commit(noResult: true); // noResult: true でパフォーマンス向上
@@ -75,12 +76,29 @@ class DatabaseHelper {
   // Get all users
   Future<List<Map<String, dynamic>>> getUsers() async {
     Database db = await database;
-    return await db.query('users');
+    return await db.query('test');
   }
 
   // Close the database
   Future close() async {
     Database db = await database;
     db.close();
+  }
+
+  Future<void> insertBatch(List<Map<String, Object>> dataList) async {
+    final db = await database;
+    final batch = db.batch();
+
+    for (var data in dataList) {
+      batch.insert('users', {
+        'timestamp': data['timestamp'],
+        'useraccelerometerData_X': data['useraccelerometerData_X'],
+        'useraccelerometerData_Y': data['useraccelerometerData_Y'],
+        'useraccelerometerData_Z': data['useraccelerometerData_Z'],
+        'location_latitude': data['location_latitude'],
+        'location_longitude': data['location_longitude'],
+      });
+    }
+    await batch.commit(noResult: true);
   }
 }
